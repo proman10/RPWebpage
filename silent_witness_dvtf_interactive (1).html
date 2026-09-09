@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Silent Witness & Digital Proof — DVTF</title>
+<style>
+:root{
+  --black:#050608; --panel:#0d1014; --panel2:#13171c; --white:#f4f7fa;
+  --muted:#9da7b2; --blue:#168cff; --blue2:#6bc1ff; --yellow:#ffd83d;
+  --line:rgba(22,140,255,.38); --green:#65e6b0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--black);color:var(--white);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.13;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:55px 55px;z-index:-3}
+body:after{content:"";position:fixed;width:500px;height:500px;right:-220px;top:10%;background:radial-gradient(circle,rgba(22,140,255,.11),transparent 65%);pointer-events:none;z-index:-2}
+a{color:inherit;text-decoration:none}
+.container{width:min(1180px,90vw);margin:auto}
+nav{position:fixed;top:0;left:0;right:0;height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 5vw;background:rgba(5,6,8,.72);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.06);z-index:50}
+.brand{font-weight:800;letter-spacing:.14em;font-size:.78rem}
+.brand span{color:var(--blue)}
+.navlinks{display:flex;gap:26px;font-size:.72rem;color:#89939e;text-transform:uppercase;letter-spacing:.12em}
+.navlinks a.active,.navlinks a:hover{color:var(--white)}
+.progress{position:absolute;bottom:-1px;left:0;height:2px;width:0;background:var(--blue);box-shadow:0 0 14px var(--blue)}
+section{position:relative;min-height:100vh;padding:140px 0 110px}
+.hero{display:grid;place-items:center;text-align:center;min-height:100vh;padding-top:100px;overflow:hidden}
+.hero .eyebrow,.eyebrow{font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;color:var(--blue2);font-weight:700}
+h1{font-size:clamp(3rem,8vw,7.7rem);line-height:.9;letter-spacing:-.065em;margin:22px 0}
+.hero h1{max-width:1050px}
+.hero h1 span{color:var(--yellow)}
+.subtitle{font-size:clamp(1rem,2vw,1.35rem);color:#b6c0c9;max-width:720px;margin:0 auto;line-height:1.65}
+.scrollcue{margin-top:48px;font-size:.68rem;letter-spacing:.25em;color:#69747f;text-transform:uppercase}
+.watch-wrap{height:340px;width:240px;position:relative;margin:40px auto 0;perspective:900px}
+.watch{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotateX(5deg) rotateY(-12deg);width:180px;height:225px;border-radius:43px;background:linear-gradient(145deg,#20262c,#060708 65%);border:6px solid #303941;box-shadow:0 35px 70px rgba(0,0,0,.7),0 0 50px rgba(22,140,255,.15);animation:float 4.5s ease-in-out infinite}
+.watch:before{content:"";position:absolute;left:-18px;top:55px;width:12px;height:48px;border-radius:6px;background:#323b43}
+.watch:after{content:"";position:absolute;inset:12px;border-radius:33px;background:radial-gradient(circle at 50% 25%,#162333,#030507 72%);border:2px solid #10151a}
+.strap{position:absolute;z-index:-1;left:47px;width:86px;height:420px;top:-98px;border-radius:45px;background:repeating-linear-gradient(90deg,#171b20 0 10px,#222830 10px 12px);opacity:.9}
+.screen{position:absolute;z-index:3;inset:34px 29px;border-radius:25px;background:#03080b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;box-shadow:inset 0 0 25px rgba(22,140,255,.12)}
+.bpm{font-size:2.1rem;font-weight:800}.tiny{font-size:.48rem;color:#87929d;letter-spacing:.16em}.pulse{width:90px;height:35px}.pulse svg{width:100%;height:100%}.pulse path{fill:none;stroke:var(--blue2);stroke-width:2;stroke-dasharray:140;animation:dash 2s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-280}} @keyframes float{50%{transform:translate(-50%,-56%) rotateX(2deg) rotateY(12deg)}}
+.circuit{position:absolute;inset:0;pointer-events:none;opacity:.6}
+.circuit i{position:absolute;height:1px;background:linear-gradient(90deg,transparent,var(--blue),transparent);box-shadow:0 0 8px rgba(22,140,255,.6)}
+.circuit i:nth-child(1){width:32%;top:23%;left:0}.circuit i:nth-child(2){width:24%;top:63%;right:0}.circuit i:nth-child(3){width:18%;top:39%;right:3%;transform:rotate(90deg)}.circuit i:nth-child(4){width:25%;top:76%;left:3%;transform:rotate(90deg)}
+.node{position:absolute;width:6px;height:6px;border:1px solid var(--blue2);border-radius:50%;box-shadow:0 0 10px var(--blue);background:var(--black)}
+.node:nth-child(5){left:18%;top:23%}.node:nth-child(6){right:25%;top:63%}.node:nth-child(7){right:12%;top:40%}.node:nth-child(8){left:14%;top:76%}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:center}
+.kicker{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--blue2);margin-bottom:18px;font-weight:800}
+h2{font-size:clamp(2.4rem,5vw,5.5rem);line-height:.94;letter-spacing:-.055em;margin-bottom:25px}
+.lead{font-size:1.08rem;color:#b4bec8;line-height:1.8;max-width:620px}
+.card{background:linear-gradient(145deg,rgba(19,23,28,.92),rgba(9,11,14,.92));border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:30px;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+.telemetry{display:grid;gap:15px}
+.stream{border:1px solid var(--line);border-radius:14px;padding:18px;background:rgba(22,140,255,.035);position:relative;overflow:hidden}
+.stream .tag{font-size:.62rem;letter-spacing:.15em;color:var(--blue2);font-weight:800}
+.wave{height:60px;margin-top:10px}.wave svg{width:100%;height:100%}.wave path{fill:none;stroke:var(--blue2);stroke-width:2;stroke-linecap:round}
+.problem{background:linear-gradient(180deg,transparent,rgba(22,140,255,.035),transparent)}
+.warning{display:inline-flex;gap:10px;align-items:center;padding:10px 14px;border:1px solid rgba(255,216,61,.35);border-radius:999px;color:var(--yellow);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;margin-top:24px}
+.hypothesis{text-align:center}.hypothesis .card{max-width:1000px;margin:auto;padding:65px 8vw;border-color:rgba(22,140,255,.32)}
+.h1mark{font-size:clamp(4rem,8vw,7rem);font-weight:900;color:var(--blue);letter-spacing:-.08em;line-height:.8}
+.hypothesis h2{margin:30px auto 20px;max-width:850px;font-size:clamp(2rem,4vw,4.3rem)}
+.h0{color:#78838e;margin-top:25px}
+.framework{overflow:hidden}
+.framework-head{text-align:center;margin-bottom:70px}
+.pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;position:relative}
+.pipeline:before{content:"";position:absolute;top:62px;left:7%;right:7%;height:1px;background:linear-gradient(90deg,var(--blue),rgba(22,140,255,.1),var(--blue))}
+.stage{min-height:300px;padding:28px;border:1px solid rgba(22,140,255,.28);border-radius:20px;background:linear-gradient(160deg,#11161b,#090b0e);position:relative;z-index:2;transition:.35s}
+.stage:hover{transform:translateY(-8px);border-color:var(--blue);box-shadow:0 20px 50px rgba(22,140,255,.12)}
+.num{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--blue);background:#07101a;color:var(--blue2);font-weight:900;margin-bottom:55px}
+.stage h3{font-size:1.25rem;margin-bottom:14px}.stage p{color:#9ca7b1;line-height:1.65;font-size:.92rem}
+.center-watch{display:grid;place-items:center;margin:55px 0}.mini-watch{width:115px;height:145px;border:5px solid #313b43;border-radius:28px;background:#030609;box-shadow:0 0 60px rgba(22,140,255,.2);display:grid;place-items:center;color:var(--blue2);font-weight:900}
+.sensor-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px;margin:0 auto}.sensor{padding:25px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:#0c1014}.sensor strong{display:block;color:var(--blue2);margin-bottom:8px}.sensor p{color:#89949f;font-size:.9rem;line-height:1.5}
+.badge{display:block;width:max-content;margin:55px auto 0;padding:12px 18px;border-radius:8px;border:1px solid rgba(255,216,61,.35);color:var(--yellow);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase}
+.cases h2{text-align:center}.casegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:50px}.case{min-height:290px}.case .country{color:var(--blue2);font-size:.62rem;letter-spacing:.16em;font-weight:800}.case h3{font-size:1.4rem;margin:15px 0}.case p{color:#9ca7b1;line-height:1.65;font-size:.9rem}.case-icon{height:90px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:22px;display:flex;align-items:center;gap:15px;color:var(--blue);font-size:2.2rem}
+.outcomes{text-align:center}.compare{display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;max-width:950px;margin:55px auto 30px}.compare .box{padding:35px 25px;border:1px solid rgba(255,255,255,.09);border-radius:18px;background:#0d1115}.compare .box:last-child{border-color:rgba(22,140,255,.4);box-shadow:0 0 50px rgba(22,140,255,.08)}.compare strong{display:block;font-size:1.1rem}.compare span{display:block;color:#87919b;margin-top:12px}.arrow{font-size:2.5rem;color:var(--blue)}
+.confidence{max-width:850px;margin:auto}.tiers{display:grid;gap:10px;margin-top:40px}.tier{display:grid;grid-template-columns:90px 1fr;align-items:center;min-height:92px;border:1px solid rgba(255,255,255,.08);border-radius:15px;padding:15px 20px;background:#0d1115}.tier .level{font-weight:900;color:#8c97a1}.tier p{color:#aab4bd}.tier.high{border-color:rgba(22,140,255,.3)}.tier.very{background:linear-gradient(90deg,#0c2a47,#0e151c);border-color:var(--blue)}.tier.very .level{color:#fff}
+.integrity{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center}.integrity-list{display:grid;gap:12px}.integrity-list div{padding:18px 20px;border-left:2px solid var(--blue);background:#0c1014;color:#aeb7c0}.integrity-list b{color:white}.final{text-align:center;display:grid;place-items:center;background:radial-gradient(circle at 50% 50%,rgba(22,140,255,.08),transparent 42%)}.final h2{max-width:900px;font-size:clamp(3rem,8vw,7rem)}.final h2 span{color:var(--yellow)}.final p{max-width:650px;color:#a9b3bc;line-height:1.8}.footer{padding:35px 0;border-top:1px solid rgba(255,255,255,.06);color:#69737d;font-size:.72rem;letter-spacing:.08em;text-align:center}
+.reveal{opacity:0;transform:translateY(35px);transition:opacity .9s ease,transform .9s ease}.reveal.visible{opacity:1;transform:none}
+@media(max-width:900px){
+ .navlinks{display:none}.split,.integrity{grid-template-columns:1fr;gap:35px}.pipeline{grid-template-columns:1fr 1fr}.pipeline:before{display:none}.casegrid{grid-template-columns:1fr}.compare{grid-template-columns:1fr;gap:12px}.arrow{transform:rotate(90deg)}section{padding:110px 0 80px}.hero{padding-top:90px}
+}
+@media(max-width:560px){h1{font-size:3.2rem}.pipeline{grid-template-columns:1fr}.sensor-grid{grid-template-columns:1fr}.watch-wrap{transform:scale(.8);margin-top:15px}.tier{grid-template-columns:75px 1fr}.card{padding:22px}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="brand" href="#top">DVTF <span>/</span> SILENT WITNESS</a>
+  <div class="navlinks">
+    <a href="#problem">Problem</a><a href="#hypothesis">Hypothesis</a><a href="#framework">Method</a><a href="#cases">Cases</a><a href="#validation">Validation</a>
+  </div>
+  <div class="progress" id="progress"></div>
+</nav>
+
+<main id="top">
+<section class="hero">
+  <div class="circuit"><i></i><i></i><i></i><i></i><b class="node"></b><b class="node"></b><b class="node"></b><b class="node"></b></div>
+  <div class="container">
+    <div class="eyebrow reveal">Dual-Verification Telemetry Forensic Framework</div>
+    <h1 class="reveal">SILENT WITNESS <span>&</span><br>DIGITAL PROOF</h1>
+    <p class="subtitle reveal">A cyber-forensic framework for evaluating smartwatch and implant telemetry before it is treated as reliable evidence.</p>
+    <div class="watch-wrap reveal">
+      <div class="strap"></div><div class="watch"><div class="screen"><div class="tiny">PHYSIOLOGICAL SIGNAL</div><div class="bpm">72 <small style="font-size:.7rem">BPM</small></div><div class="pulse"><svg viewBox="0 0 100 35"><path d="M0 19 L12 19 L17 10 L22 28 L29 17 L36 19 L44 19 L50 19 L56 19 L61 7 L67 29 L73 19 L83 19 L100 19"/></svg></div></div></div>
+    </div>
+    <div class="scrollcue">Scroll to investigate ↓</div>
+  </div>
+</section>
+
+<section id="problem" class="problem">
+  <div class="container split">
+    <div class="reveal">
+      <div class="kicker">01 / The digital witness</div>
+      <h2>A WATCH CAN REMEMBER.<br>BUT CAN IT BE TRUSTED?</h2>
+      <p class="lead">Wearable devices can record movement, time and physiological signals that may support forensic event reconstruction. However, recorded telemetry is not automatically trustworthy and should be validated before its evidentiary reliability is assessed.</p>
+      <div class="warning">⚠ Raw telemetry requires validation</div>
+    </div>
+    <div class="card telemetry reveal">
+      <div class="stream"><div class="tag">PPG / PHYSIOLOGICAL</div><div class="wave"><svg viewBox="0 0 500 60"><path d="M0 34 L60 34 L74 30 L84 37 L96 34 L110 34 L125 34 L137 8 L149 52 L163 34 L205 34 L220 34 L230 29 L241 39 L253 34 L278 34 L290 11 L302 50 L316 34 L365 34 L380 34 L392 27 L403 40 L417 34 L500 34"/></svg></div></div>
+      <div class="stream"><div class="tag">IMU / KINETIC</div><div class="wave"><svg viewBox="0 0 500 60"><path d="M0 33 Q25 15 50 34 T100 34 Q125 55 150 33 T200 33 Q225 5 250 33 T300 33 Q325 52 350 33 T400 33 Q425 12 450 33 T500 33"/></svg></div></div>
+      <div class="stream"><div class="tag">TIMESTAMP / CONTEXT</div><div style="margin-top:15px;color:#87929c;font-family:ui-monospace;font-size:.8rem">T+00:00:00.000 &nbsp; • &nbsp; DEVICE TELEMETRY</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="hypothesis" class="hypothesis">
+  <div class="container">
+    <div class="kicker reveal">02 / Research question</div>
+    <div class="card reveal">
+      <div class="h1mark">H1</div>
+      <h2>Multi-sensor cross-verification will improve the reliability of forensic event reconstruction compared with single-source telemetry analysis.</h2>
+      <div class="h0">H0 — No meaningful improvement.</div>
+    </div>
+  </div>
+</section>
+
+<section id="framework" class="framework">
+  <div class="container">
+    <div class="framework-head reveal"><div class="kicker">03 / The core system</div><h2>THE DVTF FRAMEWORK</h2><p class="lead" style="margin:auto">From raw telemetry to structured forensic evaluation.</p></div>
+    <div class="pipeline">
+      <article class="stage reveal"><div class="num">01</div><h3>ACQUIRE & PRESERVE</h3><p>Lawful, documented acquisition of wearable telemetry using forensically sound extraction protocols.</p></article>
+      <article class="stage reveal"><div class="num">02</div><h3>SIGNAL QUALITY</h3><p>PPG + IMU signal-quality assessment before interpretation or cross-modal comparison.</p></article>
+      <article class="stage reveal"><div class="num">03</div><h3>VERIFY</h3><p>Temporal normalization plus cross-modal correlation of independent telemetry streams.</p></article>
+      <article class="stage reveal"><div class="num">04</div><h3>EVALUATE</h3><p>Anomaly detection and structured confidence assignment based on convergence.</p></article>
+    </div>
+    <div class="center-watch reveal"><div class="mini-watch">72<br><span style="font-size:.55rem">BPM</span></div></div>
+    <div class="sensor-grid">
+      <div class="sensor reveal"><strong>PPG — Physiological</strong><p>Represents a physiological telemetry stream that can be assessed for quality and temporal consistency.</p></div>
+      <div class="sensor reveal"><strong>IMU — Kinetic</strong><p>Represents movement/kinetic telemetry that can be compared against other independent signals.</p></div>
+    </div>
+    <div class="badge reveal">Proposed experimental design — not yet empirically executed</div>
+  </div>
+</section>
+
+<section id="cases" class="cases">
+  <div class="container">
+    <div class="kicker reveal" style="text-align:center">04 / Real-world context</div>
+    <h2 class="reveal">RELATED CASES</h2>
+    <div class="casegrid">
+      <article class="case card reveal"><div class="case-icon">⌚ <span>🇬🇧</span></div><div class="country">UK</div><h3>Julia James</h3><p>Wearable telemetry was investigated as a potential timeline clue.</p></article>
+      <article class="case card reveal"><div class="case-icon">◉ <span>🇺🇸</span></div><div class="country">USA</div><h3>Richard Dabate</h3><p>Fitbit activity challenged the reported timeline.</p></article>
+      <article class="case card reveal"><div class="case-icon">▣ <span>◉</span></div><div class="country">USA</div><h3>BTK Case</h3><p>Metadata from a digital document helped identify the offender.</p></article>
+    </div>
+  </div>
+</section>
+
+<section id="outcomes" class="outcomes">
+  <div class="container">
+    <div class="kicker reveal">05 / Proposed results</div>
+    <h2 class="reveal">WHAT WILL THE EXPERIMENT TEST?</h2>
+    <div class="compare reveal">
+      <div class="box"><strong>SINGLE-SOURCE TELEMETRY</strong><span>Higher uncertainty</span></div>
+      <div class="arrow">→</div>
+      <div class="box"><strong>DVTF MULTI-SENSOR VERIFICATION</strong><span>Potentially higher evidentiary confidence</span></div>
+    </div>
+    <p class="lead reveal" style="margin:auto">The proposed experiment will test whether cross-modal verification reduces temporal reconstruction error and identifies inconsistent telemetry more reliably than single-source analysis.</p>
+    <div class="badge reveal">Expected outcomes — not experimental findings</div>
+  </div>
+</section>
+
+<section>
+  <div class="container confidence">
+    <div class="kicker reveal">06 / Confidence model</div>
+    <h2 class="reveal">FOUR TIERS OF CONVERGENCE</h2>
+    <div class="tiers">
+      <div class="tier reveal"><div class="level">LOW</div><p>Weak or no convergence</p></div>
+      <div class="tier reveal"><div class="level">MODERATE</div><p>Partial convergence</p></div>
+      <div class="tier high reveal"><div class="level">HIGH</div><p>Strong temporal + sensor agreement</p></div>
+      <div class="tier very reveal"><div class="level">VERY HIGH</div><p>Strong multi-source convergence with independent temporal support</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="validation">
+  <div class="container integrity">
+    <div class="reveal"><div class="kicker">07 / Research integrity</div><h2>THE NEXT STEP IS VALIDATION.</h2><p class="lead">DVTF is presented here as a proposed framework and experimental design. Empirical testing is future work.</p></div>
+    <div class="integrity-list">
+      <div class="reveal"><b>Controlled trials</b><br>Test under defined conditions.</div>
+      <div class="reveal"><b>Multiple devices</b><br>Assess cross-device behavior.</div>
+      <div class="reveal"><b>Independent ground truth</b><br>Compare reconstruction against known events.</div>
+      <div class="reveal"><b>Empirical threshold calibration</b><br>Determine evidence-based decision thresholds.</div>
+      <div class="reveal"><b>Documented forensic acquisition</b><br>Preserve provenance and chain of custody.</div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="container">
+    <div class="kicker reveal">Final takeaway</div>
+    <h2 class="reveal">RAW TELEMETRY <span>≠</span><br>AUTOMATICALLY<br>RELIABLE EVIDENCE</h2>
+    <p class="reveal">DVTF provides a structured process for evaluating signal quality, temporal consistency and cross-modal convergence.</p>
+    <div class="watch-wrap reveal" style="margin-top:30px"><div class="watch"><div class="screen"><div class="tiny">DVTF</div><div class="bpm">READY</div><div class="tiny">VERIFY BEFORE INTERPRETING</div></div></div></div>
+  </div>
+</section>
+</main>
+<footer class="footer">SILENT WITNESS & DIGITAL PROOF · DVTF · PROPOSED RESEARCH FRAMEWORK</footer>
+
+<script>
+const reveals=document.querySelectorAll('.reveal');
+const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.14});
+reveals.forEach(x=>observer.observe(x));
+
+const links=[...document.querySelectorAll('.navlinks a')];
+const sections=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+const progress=document.getElementById('progress');
+window.addEventListener('scroll',()=>{
+  const max=document.documentElement.scrollHeight-innerHeight;
+  progress.style.width=(scrollY/max*100)+'%';
+  let current='';
+  sections.forEach(s=>{if(scrollY>=s.offsetTop-180)current='#'+s.id});
+  links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')===current));
+},{passive:true});
+</script>
+</body>
+</html>

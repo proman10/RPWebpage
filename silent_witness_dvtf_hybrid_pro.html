@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Silent Witness & Digital Proof — DVTF</title>
+<meta name="description" content="Interactive academic presentation of the proposed Dual-Verification Telemetry Forensic Framework.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<style>
+:root{
+  --bg:#050608;
+  --surface:#0c1015;
+  --surface2:#11171e;
+  --border:rgba(255,255,255,.09);
+  --white:#f5f7fa;
+  --muted:#9aa5af;
+  --dim:#66717c;
+  --blue:#168cff;
+  --blue2:#66c2ff;
+  --yellow:#ffd43b;
+  --green:#61e6ae;
+  --red:#ff6875;
+  --mono:"IBM Plex Mono",monospace;
+  --head:"Space Grotesk",sans-serif;
+  --body:"Inter",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg);scroll-behavior:smooth}
+body{font-family:var(--body);color:var(--white);background:var(--bg);overflow-x:hidden}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:-5;
+  background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:56px 56px;
+}
+body:after{
+  content:"";position:fixed;width:70vw;height:70vw;left:50%;top:35%;
+  transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;z-index:-4;
+  background:radial-gradient(circle,rgba(22,140,255,.055),transparent 62%);
+}
+a{text-decoration:none;color:inherit}
+#webgl{position:fixed;inset:0;z-index:1;pointer-events:none}
+#hud{position:fixed;inset:0;z-index:2;pointer-events:none}
+.scanline{position:absolute;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(22,140,255,.35),transparent);top:35%;opacity:.35}
+.corner{position:absolute;width:42px;height:42px;border-color:rgba(102,194,255,.35)}
+.corner.tl{top:92px;left:28px;border-top:1px solid;border-left:1px solid}
+.corner.tr{top:92px;right:28px;border-top:1px solid;border-right:1px solid}
+.corner.bl{bottom:28px;left:28px;border-bottom:1px solid;border-left:1px solid}
+.corner.br{bottom:28px;right:28px;border-bottom:1px solid;border-right:1px solid}
+
+header{
+  position:fixed;z-index:20;top:0;left:0;right:0;height:74px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 4vw;
+  background:linear-gradient(to bottom,rgba(5,6,8,.9),rgba(5,6,8,.42),transparent);
+  backdrop-filter:blur(12px);
+}
+.brand{display:flex;align-items:center;gap:12px;font-family:var(--head);font-weight:700;letter-spacing:.11em;font-size:.84rem}
+.badge{border:1px solid rgba(22,140,255,.6);color:var(--blue2);padding:5px 8px;font:500 .58rem var(--mono);letter-spacing:.1em;background:rgba(22,140,255,.06)}
+nav{display:flex;gap:25px}
+nav a{font:400 .66rem var(--mono);letter-spacing:.09em;color:#77828c;text-transform:uppercase;transition:.25s}
+nav a:hover,nav a.active{color:white}
+nav a.active:after{content:"";display:block;height:1px;background:var(--yellow);margin-top:5px}
+.progress{position:absolute;left:0;bottom:0;height:2px;width:0;background:linear-gradient(90deg,var(--blue),var(--yellow));box-shadow:0 0 12px rgba(22,140,255,.5)}
+
+section{min-height:100vh;position:relative;z-index:5;padding:130px 0 110px}
+.container{width:min(1180px,90vw);margin:auto}
+.hero{display:grid;place-items:center;text-align:center;padding-top:95px}
+.eyebrow,.kicker{font:500 .67rem var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--blue2)}
+.hero h1{
+  font:700 clamp(3.3rem,8vw,8.5rem)/.86 var(--head);
+  letter-spacing:-.065em;margin:22px auto;max-width:1100px;
+}
+.hero h1 em{font-style:normal;color:var(--yellow)}
+.subtitle{max-width:760px;margin:auto;color:#aeb8c1;font-size:clamp(1rem,2vw,1.35rem);line-height:1.65}
+.hero-meta{margin-top:25px;font:500 .7rem var(--mono);color:var(--blue2);letter-spacing:.12em}
+.scrollcue{margin-top:55px;color:#65717b;font:500 .64rem var(--mono);letter-spacing:.2em;text-transform:uppercase;animation:bob 2s infinite}
+@keyframes bob{50%{transform:translateY(7px)}}
+
+.watch-ui{
+  position:fixed;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:118px;height:146px;border-radius:26px;display:flex;align-items:center;justify-content:center;
+  text-align:center;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 35%,#12253a,#030608 72%);
+  border:2px solid rgba(102,194,255,.24);
+  box-shadow:inset 0 0 24px rgba(22,140,255,.14),0 0 50px rgba(22,140,255,.08);
+}
+.watch-ui .ui-stage{font:600 .48rem var(--mono);letter-spacing:.13em;color:var(--blue2);line-height:1.7}
+.watch-ui .ui-main{font:800 1.2rem var(--head);color:white;display:block;margin:4px 0}
+.watch-ui .ui-small{font:400 .42rem var(--mono);color:#6f7b85}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:75px;align-items:center}
+h2{font:600 clamp(2.6rem,5vw,5.8rem)/.92 var(--head);letter-spacing:-.06em;margin:18px 0 25px}
+h3{font:600 1.3rem var(--head);margin-bottom:12px}
+.lead{font-size:1.04rem;line-height:1.8;color:#aeb8c1;max-width:650px}
+.muted{color:var(--muted)}
+.panel{
+  position:relative;background:linear-gradient(145deg,rgba(17,23,30,.88),rgba(8,11,14,.92));
+  border:1px solid var(--border);border-radius:20px;padding:28px;
+  box-shadow:0 35px 100px rgba(0,0,0,.35);overflow:hidden
+}
+.panel:before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent)}
+.signal{padding:18px;border:1px solid rgba(22,140,255,.22);background:rgba(22,140,255,.025);border-radius:14px;margin-bottom:14px}
+.signal:last-child{margin-bottom:0}
+.signal-head{display:flex;justify-content:space-between;gap:15px;font:500 .61rem var(--mono);letter-spacing:.1em;color:#8c98a2}
+.signal-head b{color:var(--blue2)}
+.wave{height:62px;margin-top:12px}
+.wave svg{width:100%;height:100%}
+.wave path{fill:none;stroke:var(--blue2);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:500;animation:wave 4s linear infinite}
+.wave.yellow path{stroke:var(--yellow)}
+@keyframes wave{to{stroke-dashoffset:-1000}}
+.readout{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.readout div{padding:13px;border:1px solid var(--border);background:#080b0e;border-radius:10px}
+.readout small{display:block;color:#68747e;font:500 .55rem var(--mono);letter-spacing:.1em}
+.readout strong{display:block;margin-top:7px;font:600 .9rem var(--head)}
+
+.issue-list{display:grid;gap:10px}
+.issue{padding:17px 18px;border-left:2px solid var(--blue);background:rgba(255,255,255,.025);font-size:.86rem;line-height:1.5;color:#aab4bd}
+.issue b{color:white}
+.issue.warn{border-left-color:var(--yellow)}
+.issue.red{border-left-color:var(--red)}
+
+.hypothesis{display:grid;place-items:center;text-align:center}
+.hypothesis .panel{max-width:1030px;padding:70px 8vw;border-color:rgba(22,140,255,.3)}
+.h1mark{font:700 clamp(4rem,9vw,8rem)/.75 var(--head);letter-spacing:-.08em;color:var(--blue)}
+.hypothesis h2{font-size:clamp(2rem,4.5vw,4.8rem);max-width:900px;margin:35px auto 20px}
+.h0{font:500 .75rem var(--mono);color:#707b85}
+
+.framework-head{text-align:center;margin-bottom:65px}
+.pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;position:relative}
+.pipeline:before{content:"";position:absolute;left:7%;right:7%;top:57px;height:1px;background:linear-gradient(90deg,var(--blue),rgba(22,140,255,.12),var(--blue))}
+.stage{
+  min-height:310px;padding:25px;border:1px solid rgba(22,140,255,.26);border-radius:18px;
+  background:linear-gradient(155deg,#10161c,#080a0d);position:relative;z-index:3;transition:.35s
+}
+.stage:hover{transform:translateY(-7px);border-color:var(--blue);box-shadow:0 25px 60px rgba(22,140,255,.1)}
+.stage.active{border-color:var(--yellow);box-shadow:0 0 0 1px rgba(255,212,59,.12),0 25px 70px rgba(255,212,59,.06)}
+.stage-num{width:48px;height:48px;border:1px solid var(--blue);border-radius:50%;display:grid;place-items:center;background:#06111b;color:var(--blue2);font:600 .8rem var(--mono);margin-bottom:48px}
+.stage h3{font-size:1.15rem}
+.stage p{font-size:.88rem;line-height:1.65;color:#929da7}
+.stage-label{font:500 .57rem var(--mono);letter-spacing:.15em;color:var(--yellow);margin-top:20px;text-transform:uppercase}
+
+.deep{margin-top:25px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.deep-card{min-height:285px}
+.deep-card .tag{color:var(--blue2);font:500 .62rem var(--mono);letter-spacing:.14em}
+.deep-card h3{font-size:1.55rem;margin-top:12px}
+.demo-note{display:inline-block;margin-top:22px;padding:9px 12px;border:1px solid rgba(255,212,59,.3);color:var(--yellow);font:500 .58rem var(--mono);letter-spacing:.08em;text-transform:uppercase}
+
+.align-visual{display:grid;gap:13px;margin-top:20px}
+.track{border:1px solid var(--border);border-radius:12px;padding:15px;background:#070a0d}
+.track-top{display:flex;justify-content:space-between;font:500 .57rem var(--mono);color:#7d8993;letter-spacing:.08em;margin-bottom:10px}
+.track-top span:last-child{color:var(--blue2)}
+.trackline{height:42px;position:relative;overflow:hidden;background:linear-gradient(90deg,transparent,rgba(22,140,255,.035),transparent)}
+.trackline:after{content:"";position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(255,255,255,.06)}
+.marker{position:absolute;top:7px;bottom:7px;width:2px;background:var(--blue);box-shadow:0 0 12px var(--blue);animation:slide 3s ease-in-out infinite}
+.marker.m2{background:var(--yellow);box-shadow:0 0 12px var(--yellow);animation-delay:.35s}
+@keyframes slide{0%,100%{left:30%}50%{left:63%}}
+
+.confidence{margin-top:75px}
+.tiers{display:grid;gap:10px;margin-top:25px}
+.tier{display:grid;grid-template-columns:105px 1fr auto;gap:20px;align-items:center;padding:20px;border:1px solid var(--border);background:#0b0f13;border-radius:14px}
+.tier .level{font:700 .78rem var(--mono);color:#7c8791;letter-spacing:.08em}
+.tier p{font-size:.88rem;color:#a7b1ba}
+.tier .id{font:500 .57rem var(--mono);color:#66727d}
+.tier.high{border-color:rgba(22,140,255,.28)}
+.tier.very{border-color:rgba(255,212,59,.45);background:linear-gradient(90deg,rgba(255,212,59,.045),#0b1015)}
+.tier.very .level{color:var(--yellow)}
+
+.cases h2{text-align:center}
+.cases-intro{text-align:center;max-width:700px;margin:auto}
+.casegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:50px}
+.case{min-height:290px;transition:.3s}
+.case:hover{transform:translateY(-7px);border-color:rgba(255,212,59,.35)}
+.case-icon{height:75px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);margin-bottom:22px}
+.case-icon .symbol{font-size:2rem;color:var(--blue2)}
+.country{font:500 .58rem var(--mono);color:var(--blue2);letter-spacing:.15em}
+.case h3{margin-top:14px;font-size:1.35rem}
+.case p{font-size:.88rem;line-height:1.65;color:#939ea8}
+
+.outcomes{text-align:center}
+.compare{display:grid;grid-template-columns:1fr 90px 1fr;align-items:center;max-width:980px;margin:50px auto 25px}
+.compare .box{padding:35px 25px;border:1px solid var(--border);background:#0b0f13;border-radius:16px}
+.compare .box:last-child{border-color:rgba(22,140,255,.4);box-shadow:0 0 45px rgba(22,140,255,.06)}
+.compare strong{display:block;font:600 1rem var(--head)}
+.compare span{display:block;color:#8c97a1;font-size:.85rem;margin-top:10px}
+.arrow{font-size:2.3rem;color:var(--blue)}
+
+.integrity{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.roadmap{display:grid;gap:10px}
+.roadmap div{padding:18px 20px;border-left:2px solid var(--blue);background:#0c1014;color:#9faab3;font-size:.86rem}
+.roadmap b{color:white}
+.integrity-badge{display:inline-block;margin-top:25px;padding:11px 14px;border:1px solid rgba(255,212,59,.45);color:var(--yellow);font:500 .59rem var(--mono);letter-spacing:.09em;text-transform:uppercase}
+
+.final{display:grid;place-items:center;text-align:center;background:radial-gradient(circle at 50% 45%,rgba(22,140,255,.09),transparent 40%)}
+.final h2{font-size:clamp(3.1rem,8vw,8rem);max-width:1050px}
+.final h2 span{color:var(--yellow)}
+.final p{max-width:650px;color:#9ba6af;line-height:1.8}
+.final .signature{margin-top:30px;font:500 .62rem var(--mono);color:var(--blue2);letter-spacing:.16em}
+
+.reveal{opacity:0;transform:translateY(35px);transition:opacity .8s ease,transform .8s ease}
+.reveal.visible{opacity:1;transform:none}
+
+@media(max-width:900px){
+  header{padding:0 20px}.brand{font-size:.7rem}.badge{display:none}nav{display:none}
+  .grid2,.integrity,.deep{grid-template-columns:1fr;gap:30px}
+  .pipeline{grid-template-columns:1fr 1fr}.pipeline:before{display:none}
+  .casegrid{grid-template-columns:1fr}
+  .compare{grid-template-columns:1fr;gap:12px}.arrow{transform:rotate(90deg)}
+  section{padding:105px 0 75px}
+  .watch-ui{width:95px;height:120px}
+}
+@media(max-width:560px){
+  .hero h1{font-size:3.25rem}.pipeline{grid-template-columns:1fr}
+  .readout{grid-template-columns:1fr}
+  .tier{grid-template-columns:1fr}.tier .id{display:none}
+  .corner{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<div id="webgl"></div>
+<div id="hud">
+  <div class="scanline"></div>
+  <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+</div>
+
+<div class="watch-ui" id="watchUI">
+  <div>
+    <div class="ui-stage" id="uiStage">DVTF / READY</div>
+    <span class="ui-main" id="uiMain">72 BPM</span>
+    <div class="ui-small" id="uiSmall">ILLUSTRATIVE DISPLAY</div>
+  </div>
+</div>
+
+<header>
+  <a class="brand" href="#hero">SILENT WITNESS <span class="badge">DVTF FRAMEWORK</span></a>
+  <nav>
+    <a href="#hero" class="active">00 Home</a>
+    <a href="#witness">01 Witness</a>
+    <a href="#problem">02 Problem</a>
+    <a href="#hypothesis">03 Hypothesis</a>
+    <a href="#dvtf">04 Method</a>
+    <a href="#cases">05 Cases</a>
+    <a href="#validation">06 Validation</a>
+  </nav>
+  <div class="progress" id="progress"></div>
+</header>
+
+<main>
+<section id="hero" class="hero">
+  <div class="container">
+    <div class="eyebrow reveal">Academic Research Proposal · Cyber-Forensics</div>
+    <h1 class="reveal">SILENT WITNESS <em>&</em><br>DIGITAL PROOF</h1>
+    <p class="subtitle reveal">A Cyber-Forensic Framework for Smartwatch & Implant Data</p>
+    <div class="hero-meta reveal">DUAL-VERIFICATION TELEMETRY FORENSIC FRAMEWORK</div>
+    <div class="scrollcue reveal">Scroll to investigate ↓</div>
+  </div>
+</section>
+
+<section id="witness">
+  <div class="container grid2">
+    <div class="reveal">
+      <div class="kicker">01 · Telemetry source</div>
+      <h2>A WATCH CAN REMEMBER.<br><span style="color:#6d7882;font-weight:400">BUT CAN IT BE TRUSTED?</span></h2>
+      <p class="lead">Wearable devices can record movement, time and physiological signals that may support forensic event reconstruction. However, recorded telemetry is not automatically trustworthy and should be validated before its evidentiary reliability is assessed.</p>
+      <div class="readout">
+        <div><small>SOURCE</small><strong>Wearable</strong></div>
+        <div><small>STREAMS</small><strong>PPG + IMU</strong></div>
+        <div><small>STATUS</small><strong style="color:var(--yellow)">Validate</strong></div>
+      </div>
+    </div>
+    <div class="panel reveal">
+      <div class="kicker" style="margin-bottom:15px">Illustrative telemetry</div>
+      <div class="signal">
+        <div class="signal-head"><span>PPG / PHYSIOLOGICAL</span><b>DEMO SIGNAL</b></div>
+        <div class="wave yellow"><svg viewBox="0 0 500 60"><path d="M0 34 L55 34 L70 31 L80 37 L91 34 L120 34 L132 8 L145 51 L158 34 L225 34 L240 34 L250 30 L260 38 L271 34 L300 34 L313 10 L326 50 L339 34 L410 34 L425 34 L436 29 L448 39 L460 34 L500 34"/></svg></div>
+      </div>
+      <div class="signal">
+        <div class="signal-head"><span>IMU / KINETIC</span><b>DEMO SIGNAL</b></div>
+        <div class="wave"><svg viewBox="0 0 500 60"><path d="M0 33 Q25 15 50 33 T100 33 Q125 52 150 33 T200 33 Q225 8 250 33 T300 33 Q325 51 350 33 T400 33 Q425 12 450 33 T500 33"/></svg></div>
+      </div>
+      <div style="font:500 .55rem var(--mono);color:#66717b;margin-top:15px">ILLUSTRATION ONLY · NOT EXPERIMENTAL DATA</div>
+    </div>
+  </div>
+</section>
+
+<section id="problem">
+  <div class="container grid2">
+    <div class="panel reveal">
+      <div class="kicker" style="color:var(--yellow)">Forensic limitations</div>
+      <div class="issue-list">
+        <div class="issue red"><b>Sensor noise</b><br>Motion artifacts can distort physiological measurements.</div>
+        <div class="issue warn"><b>Clock drift</b><br>Independent device clocks may not share an identical temporal baseline.</div>
+        <div class="issue"><b>Proprietary processing</b><br>Vendor-side filtering can affect how recorded signals are represented.</div>
+        <div class="issue"><b>Telemetry gaps</b><br>Missing or incomplete records can weaken a timeline.</div>
+      </div>
+    </div>
+    <div class="reveal">
+      <div class="kicker">02 · The forensic problem</div>
+      <h2>RAW TELEMETRY <span style="color:var(--yellow)">≠</span><br>AUTOMATICALLY RELIABLE EVIDENCE</h2>
+      <p class="lead">A single data stream can contain artifacts, missing information or timing uncertainty. DVTF therefore treats telemetry as information that must be assessed and cross-verified—not as unquestioned proof.</p>
+    </div>
+  </div>
+</section>
+
+<section id="hypothesis" class="hypothesis">
+  <div class="container">
+    <div class="kicker reveal">03 · Core research hypothesis</div>
+    <div class="panel reveal">
+      <div class="h1mark">H1</div>
+      <h2>Multi-sensor cross-verification will improve the reliability of forensic event reconstruction compared with single-source telemetry analysis.</h2>
+      <div class="h0">H0 — No meaningful improvement.</div>
+    </div>
+  </div>
+</section>
+
+<section id="dvtf">
+  <div class="container">
+    <div class="framework-head reveal">
+      <div class="kicker">04 · Proposed methodology</div>
+      <h2>THE DVTF FRAMEWORK</h2>
+      <p class="lead" style="margin:auto">From raw telemetry to structured forensic evaluation.</p>
+    </div>
+
+    <div class="pipeline">
+      <article class="stage reveal" data-stage="1">
+        <div class="stage-num">01</div>
+        <h3>ACQUIRE & PRESERVE</h3>
+        <p>Lawful, documented acquisition of telemetry using forensically sound preservation principles.</p>
+        <div class="stage-label">Protect provenance</div>
+      </article>
+      <article class="stage reveal" data-stage="2">
+        <div class="stage-num">02</div>
+        <h3>SIGNAL QUALITY</h3>
+        <p>Assess PPG and IMU signal quality before using the streams for interpretation or comparison.</p>
+        <div class="stage-label">Assess reliability</div>
+      </article>
+      <article class="stage reveal" data-stage="3">
+        <div class="stage-num">03</div>
+        <h3>VERIFY</h3>
+        <p>Normalize temporal references and compare independent physiological and kinetic telemetry.</p>
+        <div class="stage-label">Find convergence</div>
+      </article>
+      <article class="stage reveal" data-stage="4">
+        <div class="stage-num">04</div>
+        <h3>EVALUATE</h3>
+        <p>Identify anomalies and assign a structured confidence level based on the available convergence.</p>
+        <div class="stage-label">Qualify evidence</div>
+      </article>
+    </div>
+
+    <div class="deep">
+      <div class="panel deep-card reveal">
+        <div class="tag">Stage 01 → Stage 02</div>
+        <h3>Preserve first. Interpret second.</h3>
+        <p class="lead" style="font-size:.9rem">The proposed workflow begins with documented acquisition and preservation. It then asks a basic scientific question: <b style="color:white">is the recorded signal of sufficient quality to interpret?</b></p>
+        <span class="demo-note">Conceptual workflow</span>
+      </div>
+      <div class="panel deep-card reveal">
+        <div class="tag">Stage 03 · Alignment mechanism</div>
+        <h3>Temporal normalization + cross-modal convergence</h3>
+        <p class="lead" style="font-size:.9rem">Independent streams are placed on a unified temporal baseline and compared for agreement or divergence. Agreement can strengthen confidence; disagreement triggers further evaluation.</p>
+        <div class="align-visual">
+          <div class="track"><div class="track-top"><span>PPG / PHYSIOLOGICAL</span><span>REFERENCE A</span></div><div class="trackline"><span class="marker"></span></div></div>
+          <div class="track"><div class="track-top"><span>IMU / KINETIC</span><span>REFERENCE B</span></div><div class="trackline"><span class="marker m2"></span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="confidence reveal">
+      <div class="kicker">04.B · Proposed confidence hierarchy</div>
+      <h3 style="font-size:1.8rem;margin-top:12px">Four tiers of convergence</h3>
+      <div class="tiers">
+        <div class="tier"><div class="level">LOW</div><p>Weak or no convergence</p><div class="id">LEVEL 01</div></div>
+        <div class="tier"><div class="level">MODERATE</div><p>Partial convergence</p><div class="id">LEVEL 02</div></div>
+        <div class="tier high"><div class="level">HIGH</div><p>Strong temporal + sensor agreement</p><div class="id">LEVEL 03</div></div>
+        <div class="tier very"><div class="level">VERY HIGH</div><p>Strong multi-source convergence with independent temporal support</p><div class="id">LEVEL 04</div></div>
+      </div>
+      <div class="demo-note">Proposed model · no numerical score implied</div>
+    </div>
+  </div>
+</section>
+
+<section id="cases" class="cases">
+  <div class="container">
+    <div class="kicker reveal" style="text-align:center">05 · Real-world context</div>
+    <h2 class="reveal">RELATED CASES</h2>
+    <p class="lead cases-intro reveal">Selected cases illustrate how digital records can become relevant to forensic timelines and investigations.</p>
+    <div class="casegrid">
+      <article class="panel case reveal">
+        <div class="case-icon"><span class="symbol">⌚</span><span>UK</span></div>
+        <div class="country">FORENSIC TIMELINE</div>
+        <h3>Julia James</h3>
+        <p>Wearable telemetry was investigated as a potential timeline clue.</p>
+      </article>
+      <article class="panel case reveal">
+        <div class="case-icon"><span class="symbol">◉</span><span>USA</span></div>
+        <div class="country">TELEMETRY CONTRADICTION</div>
+        <h3>Richard Dabate</h3>
+        <p>Fitbit activity became relevant to questions surrounding the reported timeline.</p>
+      </article>
+      <article class="panel case reveal">
+        <div class="case-icon"><span class="symbol">▣</span><span>USA</span></div>
+        <div class="country">DIGITAL METADATA</div>
+        <h3>BTK Case</h3>
+        <p>Metadata associated with a digital document contributed to offender identification.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="outcomes" class="outcomes">
+  <div class="container">
+    <div class="kicker reveal">06 · Proposed results</div>
+    <h2 class="reveal">WHAT WILL THE EXPERIMENT TEST?</h2>
+    <div class="compare reveal">
+      <div class="box"><strong>SINGLE-SOURCE TELEMETRY</strong><span>Higher uncertainty may remain when evidence is isolated.</span></div>
+      <div class="arrow">→</div>
+      <div class="box"><strong>DVTF MULTI-SENSOR VERIFICATION</strong><span>Cross-modal agreement may support higher evidentiary confidence.</span></div>
+    </div>
+    <p class="lead reveal" style="margin:auto">The proposed experiment will test whether cross-modal verification reduces temporal reconstruction error and identifies inconsistent telemetry more reliably than single-source analysis.</p>
+    <div class="integrity-badge reveal">EXPECTED OUTCOMES · NOT EXPERIMENTAL FINDINGS</div>
+  </div>
+</section>
+
+<section id="validation">
+  <div class="container integrity">
+    <div class="reveal">
+      <div class="kicker">07 · Research integrity</div>
+      <h2>THE NEXT STEP IS VALIDATION.</h2>
+      <p class="lead">DVTF is presented as a proposed framework and experimental design. Empirical validation remains future work.</p>
+      <div class="integrity-badge">CONCEPTUAL FRAMEWORK · NOT YET EMPIRICALLY EXECUTED</div>
+    </div>
+    <div class="roadmap">
+      <div class="reveal"><b>Controlled trials</b><br>Test under defined experimental conditions.</div>
+      <div class="reveal"><b>Multiple devices</b><br>Assess how telemetry behaves across platforms.</div>
+      <div class="reveal"><b>Independent ground truth</b><br>Compare reconstructed events against known reference events.</div>
+      <div class="reveal"><b>Empirical threshold calibration</b><br>Determine evidence-based decision thresholds.</div>
+      <div class="reveal"><b>Documented forensic acquisition</b><br>Preserve provenance and chain-of-custody requirements.</div>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="container">
+    <div class="kicker reveal">Final takeaway</div>
+    <h2 class="reveal">RAW TELEMETRY <span>≠</span><br>AUTOMATICALLY<br>RELIABLE EVIDENCE</h2>
+    <p class="reveal">DVTF provides a structured process for evaluating signal quality, temporal consistency and cross-modal convergence.</p>
+    <div class="signature reveal">SILENT WITNESS & DIGITAL PROOF · GRADE 10 RESEARCH PROJECT · DVTF</div>
+  </div>
+</section>
+</main>
+
+<script>
+let scene,camera,renderer,watchGroup,watchScreen;
+const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function roundedBoxGeometry(w,h,d,r,segments=6){
+  const shape=new THREE.Shape();
+  const x=-w/2,y=-h/2;
+  shape.moveTo(x+r,y); shape.lineTo(x+w-r,y);
+  shape.quadraticCurveTo(x+w,y,x+w,y+r);
+  shape.lineTo(x+w,y+h-r); shape.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  shape.lineTo(x+r,y+h); shape.quadraticCurveTo(x,y+h,x,y+h-r);
+  shape.lineTo(x,y+r); shape.quadraticCurveTo(x,y,x+r,y);
+  const geo=new THREE.ExtrudeGeometry(shape,{depth:d,bevelEnabled:true,bevelSegments:segments,bevelSize:r*.28,bevelThickness:r*.2,curveSegments:12});
+  geo.center(); return geo;
+}
+function initThree(){
+  const el=document.getElementById('webgl');
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.1,100);
+  camera.position.set(0,0,7.5);
+  renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth,innerHeight);
+  el.appendChild(renderer.domElement);
+
+  scene.add(new THREE.AmbientLight(0xffffff,.62));
+  const blue=new THREE.DirectionalLight(0x168cff,2.0); blue.position.set(4,4,6); scene.add(blue);
+  const yellow=new THREE.DirectionalLight(0xffd43b,1.25); yellow.position.set(-5,-4,3); scene.add(yellow);
+
+  watchGroup=new THREE.Group();
+  const body=new THREE.Mesh(
+    roundedBoxGeometry(2.35,2.85,.42,.42),
+    new THREE.MeshStandardMaterial({color:0x1b2229,metalness:.92,roughness:.2})
+  );
+  watchGroup.add(body);
+
+  const bezel=new THREE.Mesh(
+    roundedBoxGeometry(2.08,2.56,.16,.32),
+    new THREE.MeshStandardMaterial({color:0x070a0e,metalness:.5,roughness:.18,emissive:0x06111a,emissiveIntensity:.25})
+  );
+  bezel.position.z=.27; watchGroup.add(bezel);
+
+  const screen=new THREE.Mesh(
+    roundedBoxGeometry(1.88,2.35,.06,.28),
+    new THREE.MeshStandardMaterial({color:0x020507,roughness:.08,emissive:0x0b2a44,emissiveIntensity:.35})
+  );
+  screen.position.z=.38; watchScreen=screen; watchGroup.add(screen);
+
+  const crown=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,.42,24),
+    new THREE.MeshStandardMaterial({color:0x59636c,metalness:.85,roughness:.22}));
+  crown.rotation.z=Math.PI/2;crown.position.set(1.28,.48,.02);watchGroup.add(crown);
+
+  const side=new THREE.Mesh(new THREE.BoxGeometry(.13,.52,.18),
+    new THREE.MeshStandardMaterial({color:0x3a444d,metalness:.8,roughness:.25}));
+  side.position.set(1.23,-.22,.02);watchGroup.add(side);
+
+  const strapMat=new THREE.MeshStandardMaterial({color:0x0c1014,roughness:.78});
+  const topStrap=new THREE.Mesh(new THREE.BoxGeometry(1.45,1.65,.18),strapMat);
+  topStrap.position.y=2.1;watchGroup.add(topStrap);
+  const bottomStrap=topStrap.clone();bottomStrap.position.y=-2.1;watchGroup.add(bottomStrap);
+
+  const sensorMat=new THREE.MeshBasicMaterial({color:0x168cff});
+  for(let i=0;i<3;i++){
+    const s=new THREE.Mesh(new THREE.SphereGeometry(.13,16,16),sensorMat);
+    s.position.set((i-1)*.28,-.25,-.28);watchGroup.add(s);
+  }
+  scene.add(watchGroup);
+  watchGroup.position.set(0,-.1,0);
+  window.addEventListener('resize',resizeThree);
+}
+function resizeThree(){
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+}
+function animate(){
+  requestAnimationFrame(animate);
+  if(watchGroup && !reduceMotion){
+    watchGroup.rotation.y+=.0022;
+    watchGroup.position.y+=Math.sin(performance.now()*.0008)*.0008;
+  }
+  renderer.render(scene,camera);
+}
+
+function initScroll(){
+  gsap.registerPlugin(ScrollTrigger);
+  const watch=watchGroup;
+  const tl=gsap.timeline({
+    scrollTrigger:{trigger:"body",start:"top top",end:"bottom bottom",scrub:1.2}
+  });
+  tl.to(watch.position,{x:2.65,y:.15,z:1.0,duration:1},0)
+    .to(watch.rotation,{x:.15,y:.75,z:-.05,duration:1},0)
+    .to(watch.position,{x:-2.5,y:.1,z:.55,duration:1},1)
+    .to(watch.rotation,{x:-.2,y:2.35,z:.08,duration:1},1)
+    .to(watch.position,{x:0,y:1.0,z:-.8,duration:1},2)
+    .to(watch.rotation,{x:.3,y:3.15,z:0,duration:1},2)
+    .to(watch.position,{x:0,y:-.15,z:1.4,duration:1},3)
+    .to(watch.rotation,{x:.05,y:4.7,z:-.05,duration:1},3)
+    .to(watch.position,{x:0,y:0,z:0,duration:1},4)
+    .to(watch.rotation,{x:0,y:6.28,z:0,duration:1},4)
+    .to(watch.position,{x:0,y:-.3,z:.2,duration:1},5);
+
+  const ui=document.getElementById('watchUI');
+  gsap.to(ui,{opacity:1,duration:.6,scrollTrigger:{trigger:"#witness",start:"top 75%",end:"bottom 25%",scrub:true}});
+  gsap.to(ui,{opacity:.85,duration:.6,scrollTrigger:{trigger:"#dvtf",start:"top 75%",end:"bottom 25%",scrub:true}});
+
+  const stageData=[
+    {trigger:"#hero",stage:"DVTF / READY",main:"DATA",small:"ILLUSTRATIVE DISPLAY"},
+    {trigger:"#witness",stage:"SOURCE / TELEMETRY",main:"PPG + IMU",small:"ILLUSTRATIVE STREAMS"},
+    {trigger:"#problem",stage:"CHECK / INTEGRITY",main:"VALIDATE",small:"ARTIFACTS MATTER"},
+    {trigger:"#hypothesis",stage:"HYPOTHESIS / H1",main:"COMPARE",small:"PROPOSED TEST"},
+    {trigger:"#dvtf",stage:"METHOD / 01→04",main:"DVTF",small:"FOUR STAGES"},
+    {trigger:"#cases",stage:"CONTEXT / CASES",main:"EVIDENCE",small:"REAL-WORLD CONTEXT"},
+    {trigger:"#validation",stage:"STATUS / FUTURE",main:"TEST",small:"NOT YET EXECUTED"}
+  ];
+  stageData.forEach(d=>{
+    ScrollTrigger.create({
+      trigger:d.trigger,start:"top 55%",end:"bottom 45%",
+      onEnter:()=>setUI(d.stage,d.main,d.small),
+      onEnterBack:()=>setUI(d.stage,d.main,d.small)
+    });
+  });
+
+  document.querySelectorAll('.stage').forEach((s,i)=>{
+    ScrollTrigger.create({
+      trigger:s,start:"top 62%",end:"bottom 38%",
+      onEnter:()=>s.classList.add('active'),onLeave:()=>s.classList.remove('active'),
+      onEnterBack:()=>s.classList.add('active'),onLeaveBack:()=>s.classList.remove('active')
+    });
+  });
+
+  gsap.to("#progress",{width:"100%",ease:"none",scrollTrigger:{trigger:"body",start:"top top",end:"bottom bottom",scrub:true}});
+}
+function setUI(stage,main,small){
+  document.getElementById('uiStage').textContent=stage;
+  document.getElementById('uiMain').textContent=main;
+  document.getElementById('uiSmall').textContent=small;
+}
+
+function initReveal(){
+  const els=document.querySelectorAll('.reveal');
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
+  },{threshold:.12});
+  els.forEach(e=>obs.observe(e));
+}
+function initNav(){
+  const links=[...document.querySelectorAll('nav a')];
+  const sections=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const sync=()=>{
+    let current='hero';
+    sections.forEach(s=>{if(scrollY>=s.offsetTop-220)current=s.id});
+    links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==="#"+current));
+  };
+  addEventListener('scroll',sync,{passive:true});sync();
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  initThree();animate();initReveal();initNav();
+  if(!reduceMotion) initScroll();
+  else setUI("DVTF / READY","DATA","ILLUSTRATIVE DISPLAY");
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SILENT WITNESS & DIGITAL PROOF | DVTF Cyber-Forensic Framework</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #050608;
+            --surface-color: rgba(15, 18, 24, 0.75);
+            --surface-border: rgba(255, 255, 255, 0.08);
+            --accent-yellow: #f59e0b;
+            --accent-yellow-glow: rgba(245, 158, 11, 0.25);
+            --accent-blue: #0ea5e9;
+            --accent-blue-glow: rgba(14, 165, 233, 0.3);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --text-dim: #4b5563;
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-heading: 'Space Grotesk', sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+        }
+
+        body {
+            position: relative;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Fixed Background 3D Canvas Container */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* SVG Circuit Tracer Overlay */
+        #circuit-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* Navigation Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 3rem;
+            z-index: 100;
+            background: linear-gradient(to bottom, rgba(5,6,8,0.9) 0%, rgba(5,6,8,0) 100%);
+            backdrop-filter: blur(8px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 0.1em;
+            color: #fff;
+        }
+
+        .brand-badge {
+            background: rgba(14, 165, 233, 0.15);
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        nav a:hover, nav a.active {
+            color: #fff;
+        }
+
+        nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--accent-yellow);
+        }
+
+        /* Scroll Progress Bar */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-yellow));
+            z-index: 101;
+            width: 0%;
+        }
+
+        /* Scroll Content Wrapper */
+        .content-wrapper {
+            position: relative;
+            z-index: 10;
+        }
+
+        section {
+            min-height: 100vh;
+            padding: 8rem 4rem 4rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Typography Utilities */
+        .tag {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent-yellow);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tag::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--accent-yellow);
+            border-radius: 50%;
+        }
+
+        h1, h2, h3 {
+            font-family: var(--font-heading);
+            font-weight: 600;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            margin-bottom: 1.5rem;
+            background: linear-gradient(180deg, #ffffff 0%, #a1a1aa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-size: clamp(2rem, 3.5vw, 3rem);
+            margin-bottom: 1rem;
+        }
+
+        p {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: var(--text-muted);
+            max-width: 65ch;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Hero Section */
+        #hero {
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
+            justify-content: space-between;
+            padding-top: 10rem;
+            padding-bottom: 4rem;
+        }
+
+        .hero-title-container {
+            max-width: 900px;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 2vw, 1.5rem);
+            color: var(--text-main);
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+        }
+
+        .scroll-indicator {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 0.2em;
+            animation: bounce 2s infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+            60% { transform: translateY(-4px); }
+        }
+
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: var(--surface-color);
+            border: 1px solid var(--surface-border);
+            backdrop-filter: blur(12px);
+            border-radius: 4px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+        }
+
+        /* Section Layout Grid */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        /* Waveform Containers */
+        .waveform-box {
+            width: 100%;
+            height: 80px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--surface-border);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .waveform-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Timeline Alignment Interactive Visualizer */
+        .timeline-visualizer {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .timeline-track {
+            background: rgba(15, 18, 24, 0.9);
+            border: 1px solid var(--surface-border);
+            border-radius: 4px;
+            padding: 1.25rem;
+            position: relative;
+        }
+
+        .track-label {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--accent-blue);
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signal-bar-container {
+            height: 40px;
+            position: relative;
+            background: rgba(0,0,0,0.5);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .signal-wave-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Confidence Matrix Stack */
+        .confidence-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 2rem;
+        }
+
+        .confidence-level {
+            padding: 1.25rem 1.5rem;
+            border-radius: 4px;
+            border: 1px solid var(--surface-border);
+            background: rgba(15, 18, 24, 0.6);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.4s ease;
+        }
+
+        .confidence-level.active {
+            border-color: var(--accent-yellow);
+            background: rgba(245, 158, 11, 0.08);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
+        }
+
+        .confidence-title {
+            font-family: var(--font-heading);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .confidence-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0;
+        }
+
+        /* Case Cards */
+        .case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .case-card {
+            background: var(--surface-color);
+            border: 1px solid var(--surface-border);
+            padding: 2rem;
+            border-radius: 4px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .case-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(245, 158, 11, 0.4);
+        }
+
+        .case-meta {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--accent-blue);
+            margin-bottom: 0.75rem;
+        }
+
+        /* Badge / Warning banner */
+        .academic-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.25rem;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--accent-yellow);
+            border-radius: 2px;
+            color: var(--accent-yellow);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            margin: 1.5rem 0;
+        }
+
+        /* Connectors / Flow Pipeline */
+        .pipeline-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 3rem 0;
+            position: relative;
+        }
+
+        .pipeline-step {
+            text-align: center;
+            flex: 1;
+            padding: 1.5rem 1rem;
+            background: rgba(15, 18, 24, 0.8);
+            border: 1px solid var(--surface-border);
+            border-radius: 4px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .pipeline-step h4 {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-yellow);
+            margin-bottom: 0.5rem;
+        }
+
+        .pipeline-connector {
+            flex: 0.5;
+            height: 2px;
+            background: var(--surface-border);
+            position: relative;
+        }
+
+        .pipeline-connector::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            right: 0;
+            width: 8px;
+            height: 8px;
+            border-top: 2px solid var(--accent-blue);
+            border-right: 2px solid var(--accent-blue);
+            transform: rotate(45deg);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 900px) {
+            header { padding: 1rem 1.5rem; }
+            nav { display: none; }
+            section { padding: 6rem 1.5rem 3rem 1.5rem; }
+            .two-col { grid-template-columns: 1fr; gap: 2rem; }
+            .pipeline-flow { flex-direction: column; gap: 1rem; }
+            .pipeline-connector { width: 2px; height: 30px; }
+            .pipeline-connector::after { top: auto; bottom: 0; right: -3px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Scroll Progress Bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Background 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Circuit SVG Lines Overlay -->
+    <svg id="circuit-overlay" width="100%" height="100%">
+        <path id="circuit-path-1" d="M 100 0 L 100 300 L 400 500" stroke="rgba(14, 165, 233, 0.15)" stroke-width="1.5" fill="none" stroke-dasharray="8,8" />
+        <path id="circuit-path-2" d="M M 0 800 L 500 800 L 700 1100" stroke="rgba(245, 158, 11, 0.15)" stroke-width="1.5" fill="none" />
+    </svg>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="brand">
+            <span>SILENT WITNESS</span>
+            <span class="brand-badge">DVTF FRAMEWORK</span>
+        </div>
+        <nav>
+            <a href="#hero" class="active">00 Home</a>
+            <a href="#witness">01 Witness</a>
+            <a href="#problem">02 Problem</a>
+            <a href="#hypothesis">03 Hypothesis</a>
+            <a href="#dvtf">04 Method</a>
+            <a href="#cases">05 Cases</a>
+            <a href="#validation">06 Validation</a>
+        </nav>
+    </header>
+
+    <!-- Main Scroll Content -->
+    <div class="content-wrapper">
+
+        <!-- HERO SECTION -->
+        <section id="hero">
+            <div style="height: 10vh;"></div>
+            <div class="hero-title-container">
+                <div class="tag">Academic Research Proposal &bull; Cyber-Forensics</div>
+                <h1>SILENT WITNESS &amp; DIGITAL PROOF</h1>
+                <div class="hero-subtitle">A Cyber-Forensic Framework for Smartwatch &amp; Implant Data</div>
+                <p style="margin: 1.5rem auto 0 auto; text-align: center; font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent-blue);">
+                    DVTF — Dual-Verification Telemetry Forensic Framework
+                </p>
+            </div>
+            <div class="scroll-indicator">
+                <span>SCROLL TO INVESTIGATE</span>
+                <span style="font-size: 1.2rem;">&darr;</span>
+            </div>
+        </section>
+
+        <!-- SECTION 1: THE DIGITAL WITNESS -->
+        <section id="witness">
+            <div class="two-col">
+                <div>
+                    <div class="tag">01 &bull; Telemetry Source</div>
+                    <h2>A WATCH CAN REMEMBER.<br><span style="color: var(--text-muted); font-weight: 300;">BUT CAN IT BE TRUSTED?</span></h2>
+                    <p>
+                        Wearable devices continuously log physical movement, temporal milestones, and physiological signatures that can assist in forensic event reconstruction.
+                    </p>
+                    <p>
+                        However, recorded telemetry is not inherently authoritative. Before data can be evaluated as trustworthy evidence, its technical integrity and contextual validity must be rigorously verified.
+                    </p>
+                </div>
+                <div class="glass-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-family: var(--font-mono); font-size: 0.8rem; color: #fff;">LIVE TELEMETRY STREAM</span>
+                        <span class="brand-badge" style="background: rgba(34,197,94,0.1); border-color: #22c55e; color: #22c55e;">CAPTURING</span>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display:flex; justify-size: space-between; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">
+                            <span>PPG / PHYSIOLOGICAL DATA</span>
+                            <span id="bpm-readout" style="color: var(--accent-yellow);">72 BPM</span>
+                        </div>
+                        <div class="waveform-box">
+                            <canvas id="ppg-canvas" class="waveform-canvas"></canvas>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div style="display:flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">
+                            <span>IMU / KINETIC ACCELERATION</span>
+                            <span style="color: var(--accent-blue);">1.02 G</span>
+                        </div>
+                        <div class="waveform-box">
+                            <canvas id="imu-canvas" class="waveform-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: THE FORENSIC PROBLEM -->
+        <section id="problem">
+            <div class="two-col">
+                <div class="glass-panel" style="order: 2;">
+                    <div class="tag" style="color: #ef4444;">DATA CORRUPTION FACTORS</div>
+                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; font-family: var(--font-mono); font-size: 0.85rem;">
+                        <li style="padding: 0.75rem; background: rgba(0,0,0,0.3); border-left: 2px solid #ef4444;">
+                            <strong style="color: #fff;">SENSOR NOISE:</strong> Optical PPG distortion from motion artifacts.
+                        </li>
+                        <li style="padding: 0.75rem; background: rgba(0,0,0,0.3); border-left: 2px solid var(--accent-yellow);">
+                            <strong style="color: #fff;">CLOCK DRIFT:</strong> Desynchronization between device internal RTC and UTC.
+                        </li>
+                        <li style="padding: 0.75rem; background: rgba(0,0,0,0.3); border-left: 2px solid var(--accent-blue);">
+                            <strong style="color: #fff;">PROPRIETARY SMOOTHING:</strong> Vendor OS filtering altering raw peaks.
+                        </li>
+                        <li style="padding: 0.75rem; background: rgba(0,0,0,0.3); border-left: 2px solid #a855f7;">
+                            <strong style="color: #fff;">TELEMETRY GAP:</strong> Aggressive power-saving drops vital data points.
+                        </li>
+                    </ul>
+                </div>
+                <div style="order: 1;">
+                    <div class="tag">02 &bull; Forensic Limitation</div>
+                    <h2>RAW TELEMETRY &ne;<br>AUTOMATICALLY RELIABLE EVIDENCE</h2>
+                    <p>
+                        Single-source sensor logs are frequently presented as objective truth in legal contexts. However, hardware constraints and algorithmic interpolation can introduce significant anomalies.
+                    </p>
+                    <p>
+                        Without systematic cross-verification, isolated data points run the risk of misinterpreting ordinary biological or mechanical artifacts as critical forensic events.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: THE HYPOTHESIS -->
+        <section id="hypothesis" style="text-align: center; align-items: center;">
+            <div class="tag">03 &bull; Core Research Hypothesis</div>
+            <h1 style="max-width: 1000px; margin: 0 auto 2rem auto;">
+                "Multi-sensor cross-verification will improve the reliability of forensic event reconstruction compared with single-source telemetry analysis."
+            </h1>
+            
+            <div style="display: flex; gap: 2rem; max-width: 800px; width: 100%; margin-top: 2rem; justify-content: center;">
+                <div class="glass-panel" style="flex: 1; text-align: left;">
+                    <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent-yellow); margin-bottom: 0.5rem;">H1 — PRIMARY HYPOTHESIS</div>
+                    <p style="font-size: 0.9rem; margin-bottom: 0;">Cross-modal alignment of PPG and kinetic sensors reduces false temporal classification errors in digital event timelines.</p>
+                </div>
+                <div class="glass-panel" style="flex: 1; text-align: left; opacity: 0.6;">
+                    <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">H0 — NULL HYPOTHESIS</div>
+                    <p style="font-size: 0.9rem; margin-bottom: 0;">Multi-sensor cross-verification yields no statistically meaningful improvement over isolated single-stream forensic logs.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: INTRODUCE DVTF (METHODOLOGY) -->
+        <section id="dvtf">
+            <div style="text-align: center; margin-bottom: 4rem;">
+                <div class="tag">04 &bull; Proposed Methodology</div>
+                <h2>THE DVTF FRAMEWORK</h2>
+                <p style="margin: 0 auto;">From raw telemetry extraction to structured evidentiary evaluation.</p>
+            </div>
+
+            <!-- Pipeline Visual Flow -->
+            <div class="pipeline-flow">
+                <div class="pipeline-step">
+                    <h4>STAGE 01</h4>
+                    <div style="font-weight: 600; color: #fff; font-size: 0.9rem;">Acquire &amp; Preserve</div>
+                </div>
+                <div class="pipeline-connector"></div>
+                <div class="pipeline-step">
+                    <h4>STAGE 02</h4>
+                    <div style="font-weight: 600; color: #fff; font-size: 0.9rem;">Signal Quality</div>
+                </div>
+                <div class="pipeline-connector"></div>
+                <div class="pipeline-step">
+                    <h4>STAGE 03</h4>
+                    <div style="font-weight: 600; color: #fff; font-size: 0.9rem;">Cross-Verify</div>
+                </div>
+                <div class="pipeline-connector"></div>
+                <div class="pipeline-step">
+                    <h4>STAGE 04</h4>
+                    <div style="font-weight: 600; color: #fff; font-size: 0.9rem;">Evaluate &amp; Score</div>
+                </div>
+            </div>
+
+            <!-- Interactive Stage Deep Dive (Stage 3 & 4 focus) -->
+            <div class="glass-panel" style="margin-top: 2rem;">
+                <div class="two-col">
+                    <div>
+                        <span class="tag">STAGE 03 &bull; ALIGNMENT MECHANISM</span>
+                        <h3>Temporal Normalization &amp; Cross-Modal Convergence</h3>
+                        <p>
+                            Independent sensor streams are placed on a unified temporal baseline. PPG cardiovascular spikes are mapped directly against IMU acceleration bursts to verify true physical exertion against sensor artifacts.
+                        </p>
+                        <div class="academic-badge">
+                            <span>STATUS:</span>
+                            <span>TEMPORAL CONVERGENCE DETECTED</span>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-visualizer">
+                        <div class="timeline-track">
+                            <div class="track-label">
+                                <span>PPG STREAM (PHYSIOLOGICAL)</span>
+                                <span>SIGNAL OK</span>
+                            </div>
+                            <div class="signal-bar-container">
+                                <svg class="signal-wave-svg" viewBox="0 0 500 40">
+                                    <path d="M 0 20 Q 50 20 70 5 T 90 35 T 110 20 L 250 20 Q 270 0 280 40 T 290 20 L 500 20" fill="none" stroke="var(--accent-yellow)" stroke-width="2"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="timeline-track">
+                            <div class="track-label">
+                                <span>IMU STREAM (KINETIC)</span>
+                                <span>CORRELATED</span>
+                            </div>
+                            <div class="signal-bar-container">
+                                <svg class="signal-wave-svg" viewBox="0 0 500 40">
+                                    <path d="M 0 20 L 240 20 L 255 5 L 265 35 L 275 10 L 285 30 L 295 20 L 500 20" fill="none" stroke="var(--accent-blue)" stroke-width="2"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONFIDENCE MODEL VISUALIZATION -->
+            <div style="margin-top: 6rem;">
+                <div class="tag">04.B &bull; EVIDENTIARY EVALUATION</div>
+                <h3 style="margin-bottom: 2rem;">Proposed Evidentiary Confidence Hierarchy</h3>
+                
+                <div class="confidence-stack">
+                    <div class="confidence-level active">
+                        <div>
+                            <div class="confidence-title" style="color: #22c55e;">VERY HIGH CONFIDENCE</div>
+                            <div class="confidence-desc">Multi-sensor temporal alignment with independent physical/environmental corroboration.</div>
+                        </div>
+                        <span class="brand-badge" style="border-color: #22c55e; color: #22c55e;">LEVEL 04</span>
+                    </div>
+
+                    <div class="confidence-level">
+                        <div>
+                            <div class="confidence-title" style="color: var(--accent-blue);">HIGH CONFIDENCE</div>
+                            <div class="confidence-desc">Strong cross-modal convergence between internal sensors (PPG + IMU) with clean SNR.</div>
+                        </div>
+                        <span class="brand-badge" style="border-color: var(--accent-blue); color: var(--accent-blue);">LEVEL 03</span>
+                    </div>
+
+                    <div class="confidence-level">
+                        <div>
+                            <div class="confidence-title" style="color: var(--accent-yellow);">MODERATE CONFIDENCE</div>
+                            <div class="confidence-desc">Single-sensor continuity with minor gaps or uncalibrated clock drift factors.</div>
+                        </div>
+                        <span class="brand-badge" style="border-color: var(--accent-yellow); color: var(--accent-yellow);">LEVEL 02</span>
+                    </div>
+
+                    <div class="confidence-level">
+                        <div>
+                            <div class="confidence-title" style="color: #ef4444;">LOW CONFIDENCE</div>
+                            <div class="confidence-desc">Isolated single-source telemetry exhibit high noise, dropped frames, or cross-modal divergence.</div>
+                        </div>
+                        <span class="brand-badge" style="border-color: #ef4444; color: #ef4444;">LEVEL 01</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: REAL WORLD CASE CONTEXT -->
+        <section id="cases">
+            <div class="tag">05 &bull; Case Studies</div>
+            <h2>REAL-WORLD FORENSIC CONTEXT</h2>
+            <p>Historical precedent demonstrates the increasing reliance on digital wearable telemetry in judicial proceedings.</p>
+
+            <div class="case-grid">
+                <div class="case-card">
+                    <div class="case-meta">UK &bull; FORENSIC TIMELINE</div>
+                    <h3 style="font-size: 1.2rem; margin-bottom: 0.75rem;">Julia James Investigation</h3>
+                    <p style="font-size: 0.85rem;">
+                        Smartwatch heart-rate and physical movement logs were utilized by investigators to construct a precise timeline of the victim's final movements.
+                    </p>
+                </div>
+
+                <div class="case-card">
+                    <div class="case-meta">USA &bull; TELEMETRY CONTRADICTION</div>
+                    <h3 style="font-size: 1.2rem; margin-bottom: 0.75rem;">Richard Dabate Case</h3>
+                    <p style="font-size: 0.85rem;">
+                        Fitbit distance tracking records directly contradicted statements provided regarding timelines, serving as pivotal evidence during trial.
+                    </p>
+                </div>
+
+                <div class="case-card">
+                    <div class="case-meta">USA &bull; DIGITAL METADATA</div>
+                    <h3 style="font-size: 1.2rem; margin-bottom: 0.75rem;">BTK Homicide Investigation</h3>
+                    <p style="font-size: 0.85rem;">
+                        Demonstrated the early critical role of digital metadata embedded within electronic files in establishing offender identification.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: RESEARCH INTEGRITY & FUTURE VALIDATION -->
+        <section id="validation">
+            <div class="glass-panel" style="border-color: var(--accent-yellow); background: rgba(245, 158, 11, 0.03);">
+                <div class="tag">RESEARCH INTEGRITY STATEMENT</div>
+                <h2>PROPOSED METHODOLOGY &bull; FUTURE VALIDATION</h2>
+                <div class="academic-badge">
+                    <span>STATUS: CONCEPTUAL FRAMEWORK — NOT YET EMPIRICALLY EXECUTED</span>
+                </div>
+                <p>
+                    This project proposes a theoretical cyber-forensic framework (DVTF). In accordance with scientific integrity standards, no fabricated experimental data, statistical accuracy claims, or court admissibility guarantees are asserted.
+                </p>
+                
+                <h4 style="font-family: var(--font-heading); color: #fff; margin-top: 2rem; margin-bottom: 1rem;">Future Experimental Roadmap</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-family: var(--font-mono); font-size: 0.8rem;">
+                    <div style="padding: 1rem; background: rgba(0,0,0,0.5); border: 1px solid var(--surface-border);">
+                        1. Controlled Trials across multiple sensor platforms
+                    </div>
+                    <div style="padding: 1rem; background: rgba(0,0,0,0.5); border: 1px solid var(--surface-border);">
+                        2. Independent Ground-Truth timestamp calibration
+                    </div>
+                    <div style="padding: 1rem; background: rgba(0,0,0,0.5); border: 1px solid var(--surface-border);">
+                        3. Empirical threshold testing for signal noise limiters
+                    </div>
+                </div>
+            </div>
+
+            <!-- FINAL CONCLUSION OVERLAY -->
+            <div style="text-align: center; margin-top: 8rem; padding-bottom: 4rem;">
+                <h1 style="font-size: clamp(2rem, 4vw, 3.5rem);">
+                    RAW TELEMETRY &ne;<br>AUTOMATICALLY RELIABLE EVIDENCE
+                </h1>
+                <p style="margin: 1.5rem auto; max-width: 600px;">
+                    DVTF provides a structured process for evaluating signal quality, temporal consistency, and cross-modal convergence.
+                </p>
+                <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent-yellow); letter-spacing: 0.1em; margin-top: 2rem;">
+                    SILENT WITNESS &amp; DIGITAL PROOF &bull; GRADE 10 SCIENCE RESEARCH PROJECT
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // --- 1. THREE.JS SMARTWATCH RENDERING ---
+        let scene, camera, renderer, watchGroup;
+
+        function initThree() {
+            const container = document.getElementById('canvas-container');
+            
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 7);
+
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight1 = new THREE.DirectionalLight(0x0ea5e9, 1.5);
+            dirLight1.position.set(5, 5, 5);
+            scene.add(dirLight1);
+
+            const dirLight2 = new THREE.DirectionalLight(0xf59e0b, 1.2);
+            dirLight2.position.set(-5, -5, 2);
+            scene.add(dirLight2);
+
+            // Smartwatch 3D Mesh Construction (Procedural Cybernetic Model)
+            watchGroup = new THREE.Group();
+
+            // Watch Body Frame
+            const bodyGeo = new THREE.CylinderGeometry(1.5, 1.5, 0.3, 32);
+            const bodyMat = new THREE.MeshStandardMaterial({ 
+                color: 0x111622, 
+                metalness: 0.9, 
+                roughness: 0.2 
+            });
+            const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+            bodyMesh.rotation.x = Math.PI / 2;
+            watchGroup.add(bodyMesh);
+
+            // Screen
+            const screenGeo = new THREE.CylinderGeometry(1.35, 1.35, 0.32, 32);
+            const screenMat = new THREE.MeshStandardMaterial({ 
+                color: 0x050811, 
+                roughness: 0.1,
+                emissive: 0x0ea5e9,
+                emissiveIntensity: 0.15
+            });
+            const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+            screenMesh.rotation.x = Math.PI / 2;
+            watchGroup.add(screenMesh);
+
+            // Bezel Ring
+            const ringGeo = new THREE.TorusGeometry(1.45, 0.05, 16, 64);
+            const ringMat = new THREE.MeshStandardMaterial({ color: 0x22293a, metalness: 0.8 });
+            const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+            watchGroup.add(ringMesh);
+
+            // Straps
+            const strapGeo = new THREE.BoxGeometry(1.2, 0.1, 2.2);
+            const strapMat = new THREE.MeshStandardMaterial({ color: 0x0a0d14, roughness: 0.8 });
+            
+            const topStrap = new THREE.Mesh(strapGeo, strapMat);
+            topStrap.position.set(0, 2.2, 0);
+            watchGroup.add(topStrap);
+
+            const bottomStrap = new THREE.Mesh(strapGeo, strapMat);
+            bottomStrap.position.set(0, -2.2, 0);
+            watchGroup.add(bottomStrap);
+
+            // Sensor Array Glow on Back
+            const sensorGeo = new THREE.SphereGeometry(0.2, 16, 16);
+            const sensorMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+            const sensorMesh = new THREE.Mesh(sensorGeo, sensorMat);
+            sensorMesh.position.set(0, 0, -0.15);
+            watchGroup.add(sensorMesh);
+
+            scene.add(watchGroup);
+
+            // Resize Handler
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animateThree() {
+            requestAnimationFrame(animateThree);
+            // Continuous subtle float animation
+            if (watchGroup) {
+                watchGroup.rotation.y += 0.003;
+            }
+            renderer.render(scene, camera);
+        }
+
+        // --- 2. GSAP SCROLLTRIGGER ANIMATIONS ---
+        function initScrollAnimations() {
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Progress bar
+            gsap.to('#progressBar', {
+                width: '100%',
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: 'body',
+                    start: 'top top',
+                    end: 'bottom bottom',
+                    scrub: true
+                }
+            });
+
+            // Smartwatch Scroll Transformations
+            const timeline = gsap.timeline({
+                scrollTrigger: {
+                    trigger: 'body',
+                    start: 'top top',
+                    end: 'bottom bottom',
+                    scrub: 1.5
+                }
+            });
+
+            timeline
+                // Hero -> Section 1
+                .to(watchGroup.position, { x: 2, y: 0, z: 1.5 }, 0)
+                .to(watchGroup.rotation, { x: 0.5, y: 1.2 }, 0)
+                
+                // Section 1 -> Section 2 (Forensic Problem)
+                .to(watchGroup.position, { x: -2, y: -0.5, z: 0.5 }, 1)
+                .to(watchGroup.rotation, { x: -0.8, y: 2.5 }, 1)
+
+                // Section 2 -> Section 3 (Hypothesis)
+                .to(watchGroup.position, { x: 0, y: 1, z: -1 }, 2)
+                .to(watchGroup.rotation, { x: 0, y: 3.14 }, 2)
+
+                // Section 3 -> Section 4 (Methodology)
+                .to(watchGroup.position, { x: 0, y: -0.2, z: 2 }, 3)
+                .to(watchGroup.rotation, { x: 0.3, y: 4.7 }, 3)
+
+                // Section 4 -> Cases/Validation -> End
+                .to(watchGroup.position, { x: 0, y: 0, z: 0 }, 4)
+                .to(watchGroup.rotation, { x: 0, y: 6.28 }, 4);
+
+            // Active Navigation Highlighting
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('nav a');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (pageYOffset >= (sectionTop - sectionHeight / 3)) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        // --- 3. LIVE WAVEFORM CANVAS ANIMATIONS ---
+        function initWaveforms() {
+            const ppgCanvas = document.getElementById('ppg-canvas');
+            const imuCanvas = document.getElementById('imu-canvas');
+
+            if (!ppgCanvas || !imuCanvas) return;
+
+            const ppgCtx = ppgCanvas.getContext('2d');
+            const imuCtx = imuCanvas.getContext('2d');
+
+            function resizeCanvases() {
+                ppgCanvas.width = ppgCanvas.parentElement.clientWidth;
+                ppgCanvas.height = ppgCanvas.parentElement.clientHeight;
+                imuCanvas.width = imuCanvas.parentElement.clientWidth;
+                imuCanvas.height = imuCanvas.parentElement.clientHeight;
+            }
+
+            resizeCanvases();
+            window.addEventListener('resize', resizeCanvases);
+
+            let offset = 0;
+
+            function draw() {
+                offset += 0.05;
+
+                // Draw PPG (Cardiovascular peak)
+                ppgCtx.clearRect(0, 0, ppgCanvas.width, ppgCanvas.height);
+                ppgCtx.beginPath();
+                ppgCtx.strokeStyle = '#f59e0b';
+                ppgCtx.lineWidth = 2;
+
+                const width = ppgCanvas.width;
+                const height = ppgCanvas.height;
+                const midY = height / 2;
+
+                for (let x = 0; x < width; x++) {
+                    const pos = (x + offset * 50) % 150;
+                    let y = midY;
+                    if (pos > 40 && pos < 50) {
+                        y = midY - (pos - 40) * 3;
+                    } else if (pos >= 50 && pos < 60) {
+                        y = midY - 30 + (pos - 50) * 5;
+                    } else if (pos >= 60 && pos < 70) {
+                        y = midY + 20 - (pos - 60) * 2;
+                    }
+                    if (x === 0) ppgCtx.moveTo(x, y);
+                    else ppgCtx.lineTo(x, y);
+                }
+                ppgCtx.stroke();
+
+                // Draw IMU (Kinetic Acceleration Noise + Spike)
+                imuCtx.clearRect(0, 0, imuCanvas.width, imuCanvas.height);
+                imuCtx.beginPath();
+                imuCtx.strokeStyle = '#0ea5e9';
+                imuCtx.lineWidth = 1.5;
+
+                for (let x = 0; x < width; x++) {
+                    const noise = (Math.sin(x * 0.1 + offset * 2) * 4);
+                    const pos = (x + offset * 50) % 150;
+                    let spike = 0;
+                    if (pos > 50 && pos < 70) {
+                        spike = Math.sin((pos - 50) / 20 * Math.PI) * 25;
+                    }
+                    const y = imuCanvas.height / 2 + noise - spike;
+                    if (x === 0) imuCtx.moveTo(x, y);
+                    else imuCtx.lineTo(x, y);
+                }
+                imuCtx.stroke();
+
+                requestAnimationFrame(draw);
+            }
+
+            draw();
+        }
+
+        // --- INITIALIZATION ENTRY POINT ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initThree();
+            animateThree();
+            initScrollAnimations();
+            initWaveforms();
+        });
+    </script>
+</body>
+</html>
